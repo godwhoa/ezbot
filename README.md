@@ -21,7 +21,7 @@ go run main.go
 ```go
 package main
 import(
-	"github.com/godwhoa/ezbot/commands"
+	"github.com/godwhoa/ezbot/ezbot"
 )
 
 type Echo struct {
