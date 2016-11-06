@@ -1,0 +1,5 @@
+Add more commands [DONE]
+Fix url regex [DONE]
+Handle TLS servers [DONE]
+Config file [DONE]
+Add tests
