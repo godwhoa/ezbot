@@ -27,7 +27,7 @@ type Tell struct {
 
 func NewTell() *Tell {
 	tell := &Tell{}
-	tell.Pattern = "^.tell"
+	tell.Pattern = "^.tell "
 	tell.mailbox = make(map[string][]Letter)
 	return tell
 }
