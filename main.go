@@ -29,6 +29,12 @@ func main() {
 	}
 	var config Config
 	json.Unmarshal(file, &config)
+	fmt.Printf("Commands: ")
+	for _, cmd := range config.Commands {
+		fmt.Printf("%s ", cmd)
+	}
+	fmt.Printf("\n")
+
 	m_bot := ezbot.New(config.Nick, config.Channel, config.Addr)
 	for _, c := range config.Commands {
 		switch c {
