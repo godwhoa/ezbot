@@ -45,6 +45,10 @@ func (t *Tell) Notify(user string) {
 }
 
 func (t *Tell) Execute(user string, msg string, args []string) {
+	if len(args) < 2 {
+		t.SChan <- "Usage: .tell <to> <msg>"
+		return
+	}
 	from := user
 	to := args[1]
 	body := strings.Join(args[2:], " ")
