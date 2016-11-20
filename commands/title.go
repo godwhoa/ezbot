@@ -19,13 +19,15 @@ func NewTitle() *Title {
 }
 
 func (t *Title) OnMsg(user string, msg string) {
-	url := t.Reg.FindString(msg)
-	if url != "" {
-		doc, err := goquery.NewDocument(url)
-		if err != nil {
-			return
-		}
-		t.SChan <- doc.Find("title").Text()
+	urls := t.Reg.FindAllString(msg, -1)
+	for _, url := range urls {
+		if url != "" {
+			doc, err := goquery.NewDocument(url)
+			if err != nil {
+				return
+			}
+			t.SChan <- doc.Find("title").Text()
 
+		}
 	}
 }
