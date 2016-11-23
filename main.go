@@ -50,6 +50,8 @@ func main() {
 			m_bot.AddCmd(commands.NewTitle())
 		case "git":
 			m_bot.AddCmd(commands.NewGit())
+		case "def":
+			m_bot.AddCmd(commands.NewDef())
 		}
 	}
 
