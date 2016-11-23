@@ -6,11 +6,14 @@ import (
 	"gopkg.in/sorcix/irc.v1"
 	"net"
 	"strings"
+	"time"
 )
 
 type Bot struct {
 	conn       *irc.Conn
+	nconn      net.Conn
 	tls_config *tls.Config
+	timeout    time.Duration
 	addr       string
 	nick       string
 	channel    string
@@ -24,22 +27,22 @@ func New(nick string, channel string, addr string) *Bot {
 	bot.channel = channel
 	bot.addr = addr
 	bot.schan = make(chan string)
+	bot.timeout = 300 * time.Second
 	bot.tls_config = &tls.Config{InsecureSkipVerify: true}
 	return bot
 }
 
 // Make a conn. and spin-off read/write loops.
 func (b *Bot) Connect() {
-	tconn, err := tls.Dial("tcp", b.addr, b.tls_config)
+	var err error
+	b.nconn, err = tls.Dial("tcp", b.addr, b.tls_config)
 	if err != nil {
-		conn, err := net.Dial("tcp", b.addr)
+		b.nconn, err = net.Dial("tcp", b.addr)
 		if err != nil {
 			fmt.Println("Failed to connect.")
 		}
-		b.conn = irc.NewConn(conn)
-	} else {
-		b.conn = irc.NewConn(tconn)
 	}
+	b.conn = irc.NewConn(b.nconn)
 
 	fmt.Printf("Connected to %s\nJoining %s\n", b.addr, b.channel)
 
@@ -56,6 +59,7 @@ func (b *Bot) Connect() {
 
 	// Read loop
 	for {
+		b.nconn.SetDeadline(time.Now().Add(b.timeout))
 		message, err := b.conn.Decode()
 		if err != nil {
 			fmt.Println("Failed to decode.")
