@@ -46,7 +46,7 @@ func (b *Bot) Connect() {
 
 	fmt.Printf("Connected to %s\nJoining %s\n", b.addr, b.channel)
 
-	b.JoinCmds()
+	b.JoinCmds(false)
 	for _, command := range b.commands {
 		command.Once()
 	}
@@ -67,6 +67,11 @@ func (b *Bot) Connect() {
 		}
 
 		switch message.Command {
+		case irc.RPL_WELCOME:
+			b.conn.Encode(&irc.Message{Command: irc.JOIN,
+				Params: []string{b.channel}})
+		case irc.ERR_NICKNAMEINUSE:
+			b.JoinCmds(true)
 		case irc.JOIN:
 			b.Join(message)
 		case irc.PART:
@@ -82,13 +87,15 @@ func (b *Bot) Connect() {
 }
 
 // Sets nick and joins channel
-func (b *Bot) JoinCmds() {
+func (b *Bot) JoinCmds(taken bool) {
+	if taken {
+		b.nick += "_"
+		fmt.Printf("Nick taken trying with %s\n", b.nick)
+	}
 	b.conn.Encode(&irc.Message{Command: irc.NICK,
 		Params: []string{b.nick}})
 	b.conn.Encode(&irc.Message{Command: irc.USER,
 		Params: []string{b.nick, "0", "*", b.nick}})
-	b.conn.Encode(&irc.Message{Command: irc.JOIN,
-		Params: []string{b.channel}})
 }
 
 // Adds commands to be executed
@@ -103,8 +110,9 @@ func (b *Bot) AddCmd(commands ...ICommand) {
 // Send text message
 func (b *Bot) Send(msg string) {
 	b.conn.Encode(&irc.Message{
-		Command: irc.PRIVMSG,
-		Params:  []string{b.channel, ":" + msg},
+		Command:  irc.PRIVMSG,
+		Params:   []string{b.channel},
+		Trailing: msg,
 	})
 }
 

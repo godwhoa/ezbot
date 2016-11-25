@@ -61,6 +61,6 @@ func main(){
  + ~~Fix url regex~~
  + ~~Handle TLS servers~~
  + ~~Config file~~
- + Handle nick collision
+ + ~~Handle nick collision~~
  + Better naming of types, variables etc.
  + Add tests
