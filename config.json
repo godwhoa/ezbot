@@ -2,5 +2,5 @@
 	"nick":"ezbot",
 	"channel":"#ezirc",
 	"addr":"chat.freenode.net:6667",
-	"commands":["seen","tell","timein","title"]
+	"commands":["seen","tell","timein","title","reminder"]
 }
