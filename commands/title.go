@@ -6,8 +6,9 @@ import (
 )
 
 /*
-
- */
+	user: http://exez.in
+	ezbot: exezin
+*/
 type Title struct {
 	ezbot.Command
 }
@@ -26,8 +27,7 @@ func (t *Title) OnMsg(user string, msg string) {
 			if err != nil {
 				return
 			}
-			t.SChan <- doc.Find("title").Text()
-
+			t.SChan <- doc.Find("title").First().Text()
 		}
 	}
 }
