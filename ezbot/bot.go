@@ -3,10 +3,11 @@ package ezbot
 import (
 	"crypto/tls"
 	"fmt"
-	"gopkg.in/sorcix/irc.v1"
 	"net"
 	"strings"
 	"time"
+
+	"gopkg.in/sorcix/irc.v1"
 )
 
 type Bot struct {
@@ -19,6 +20,7 @@ type Bot struct {
 	channel    string
 	commands   []ICommand
 	schan      chan string
+	Log        chan string
 }
 
 func New(nick string, channel string, addr string) *Bot {
@@ -27,6 +29,7 @@ func New(nick string, channel string, addr string) *Bot {
 	bot.channel = channel
 	bot.addr = addr
 	bot.schan = make(chan string)
+	bot.Log = make(chan string)
 	bot.timeout = 300 * time.Second
 	bot.tls_config = &tls.Config{InsecureSkipVerify: true}
 	return bot
@@ -44,7 +47,7 @@ func (b *Bot) Connect() {
 	}
 	b.conn = irc.NewConn(b.nconn)
 
-	fmt.Printf("Connected to %s\nJoining %s\n", b.addr, b.channel)
+	b.Log <- fmt.Sprintf("[bot] connecting addr: %s chan: %s", b.addr, b.channel)
 
 	b.JoinCmds(false)
 	for _, command := range b.commands {
@@ -62,7 +65,7 @@ func (b *Bot) Connect() {
 		b.nconn.SetDeadline(time.Now().Add(b.timeout))
 		message, err := b.conn.Decode()
 		if err != nil {
-			fmt.Println("Failed to decode.")
+			b.Log <- fmt.Sprintf("[bot] decode err: %s", err.Error())
 			break
 		}
 
@@ -90,18 +93,18 @@ func (b *Bot) Connect() {
 func (b *Bot) JoinCmds(taken bool) {
 	if taken {
 		b.nick += "_"
-		fmt.Printf("Nick taken trying with %s\n", b.nick)
 	}
 	b.conn.Encode(&irc.Message{Command: irc.NICK,
 		Params: []string{b.nick}})
 	b.conn.Encode(&irc.Message{Command: irc.USER,
 		Params: []string{b.nick, "0", "*", b.nick}})
+	b.Log <- fmt.Sprintf("[bot] setnick: %s", b.nick)
 }
 
 // Adds commands to be executed
 func (b *Bot) AddCmd(commands ...ICommand) {
 	for _, command := range commands {
-		command.Init(b.schan)
+		command.Init(b.schan, b.Log)
 		b.commands = append(b.commands, command)
 	}
 }
@@ -124,7 +127,7 @@ func (b *Bot) Join(message *irc.Message) {
 			command.OnJoin(nick)
 		}
 	} else {
-		fmt.Printf("Joined %s\n", b.channel)
+		b.Log <- fmt.Sprintf("[bot] joined: %s/%s", b.addr, b.channel)
 	}
 }
 
@@ -149,7 +152,7 @@ func (b *Bot) Msg(message *irc.Message) {
 	}
 }
 
-// PING reply
+// PONG reply
 func (b *Bot) Pong(message *irc.Message) {
 	b.conn.Encode(&irc.Message{
 		Command:  irc.PONG,

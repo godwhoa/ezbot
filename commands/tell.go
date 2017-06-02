@@ -38,6 +38,7 @@ func (t *Tell) Notify(user string) {
 		for _, letter := range letters {
 			time_since := time.Since(letter.when)
 			t.SChan <- fmt.Sprintf("%s, %s left this message for you: %s", user, letter.from, letter.body)
+			t.Log <- fmt.Sprintf("[tell] recived from: %s to: %s time: %s", user, letter.from, letter.when.String())
 			t.SChan <- fmt.Sprintf("%s ago", durafmt.Parse(time_since).String())
 		}
 		delete(t.mailbox, user)
@@ -52,7 +53,9 @@ func (t *Tell) Execute(user string, msg string, args []string) {
 	from := user
 	to := args[1]
 	body := strings.Join(args[2:], " ")
-	t.mailbox[to] = append(t.mailbox[to], Letter{from, body, time.Now()})
+	letter := Letter{from, body, time.Now()}
+	t.Log <- fmt.Sprintf("[tell] sent from: %s to: %s time: %s", user, letter.from, letter.when.String())
+	t.mailbox[to] = append(t.mailbox[to], letter)
 	t.SChan <- "Okie Dokie!"
 }
 

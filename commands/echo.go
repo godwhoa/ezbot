@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+
 	"github.com/godwhoa/ezbot/ezbot"
 )
 
@@ -28,4 +30,5 @@ func (e *Echo) Execute(user string, msg string, args []string) {
 	} else {
 		e.SChan <- user + "!"
 	}
+	e.Log <- fmt.Sprintf("[echo] echoed back to %s", user)
 }

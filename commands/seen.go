@@ -30,6 +30,7 @@ func (s *Seen) Execute(user string, msg string, args []string) {
 		time_since := time.Since(last_seen)
 		pretty_time := durafmt.Parse(time_since).String()
 		s.SChan <- fmt.Sprintf("%s was last seen %s ago.", user2, pretty_time)
+		s.Log <- fmt.Sprintf("[seen] requester: %s user: %s seen: %s", user, user2, pretty_time)
 	} else {
 		s.SChan <- fmt.Sprintf("No log for %s found.", user2)
 	}

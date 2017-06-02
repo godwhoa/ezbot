@@ -3,9 +3,10 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/godwhoa/ezbot/ezbot"
 	"net"
 	"net/http"
+
+	"github.com/godwhoa/ezbot/ezbot"
 )
 
 func GetPort() string {
@@ -37,10 +38,12 @@ func (g *Git) Endpoint(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&parsed)
 		if err != nil {
-			fmt.Println("Failed to parse json.")
+			g.Log <- fmt.Sprintf("[git] err: %s", err.Error())
+		} else {
+			g.Log <- fmt.Sprintf("[git] notified commit url: %s", parsed.Commits[0].URL)
+			g.SChan <- fmt.Sprintf("New commit: %s", parsed.Commits[0].URL)
+			w.Write([]byte("OK."))
 		}
-		g.SChan <- fmt.Sprintf("New commit: %s", parsed.Commits[0].URL)
-		fmt.Fprintf(w, "OK.")
 	}
 }
 

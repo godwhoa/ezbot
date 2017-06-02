@@ -3,11 +3,12 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"github.com/godwhoa/ezbot/ezbot"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/godwhoa/ezbot/ezbot"
 )
 
 /* Time format parsing */
@@ -84,17 +85,21 @@ func (r *Reminder) Execute(user string, msg string, args []string) {
 		r.SChan <- "No restrictions on: mixing up long/short form, providing all units and order of units"
 		return
 	}
-	tformat := args[1]
+	timeformat := args[1]
 	body := strings.Join(args[2:], " ")
 	go func() {
-		umap, err := Parse(tformat)
+		unitmap, err := Parse(timeformat)
 		if err != nil {
 			r.SChan <- "Incorrect time format"
 			r.SChan <- "time format: 1day2hour3min1sec or 1d2h3m1s or 1d1min"
 			r.SChan <- "No restrictions on: mixing up long/short form, providing all units and order of units"
 			return
 		}
-		time.Sleep(toDur(umap))
-		r.SChan <- fmt.Sprintf("Reminder from %s ago: %s", tformat, body)
+		duration := toDur(unitmap)
+		r.Log <- fmt.Sprintf("[reminder] %s added reminder for %s", user, timeformat)
+		time.AfterFunc(duration, func() {
+			r.SChan <- fmt.Sprintf("Reminder from %s ago: %s", timeformat, body)
+		})
+
 	}()
 }

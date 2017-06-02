@@ -59,6 +59,7 @@ func (t *TimeIn) Execute(user string, msg string, args []string) {
 			return
 		}
 		now := time.Now().In(loc)
+		t.Log <- fmt.Sprintf("[timein] user: %s zone: %s", user, zone)
 		t.SChan <- fmt.Sprintf("%s : %s", zone, now.Format(layout))
 	}
 }

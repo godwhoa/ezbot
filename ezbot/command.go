@@ -8,10 +8,11 @@ type Command struct {
 	Pattern string
 	Reg     *regexp.Regexp
 	SChan   chan string
+	Log     chan string
 }
 
 type ICommand interface {
-	Init(schan chan string)
+	Init(schan chan string, log chan string)
 	Match(msg string) bool
 	Once()
 	Execute(user string, msg string, args []string)
@@ -22,8 +23,9 @@ type ICommand interface {
 
 // Sets channel with one passed by Bot
 // Compiles regex for performance
-func (c *Command) Init(schan chan string) {
+func (c *Command) Init(schan chan string, log chan string) {
 	c.SChan = schan
+	c.Log = log
 	c.Reg = regexp.MustCompile(c.Pattern)
 }
 

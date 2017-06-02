@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/godwhoa/ezbot/ezbot"
 )
@@ -27,6 +28,7 @@ func (t *Title) OnMsg(user string, msg string) {
 			if err != nil {
 				return
 			}
+			t.Log <- fmt.Sprintf("[title] url: %s", url)
 			t.SChan <- doc.Find("title").First().Text()
 		}
 	}

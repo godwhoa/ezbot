@@ -3,9 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+
 	"github.com/godwhoa/ezbot/commands"
 	"github.com/godwhoa/ezbot/ezbot"
-	"io/ioutil"
 )
 
 var (
@@ -27,6 +28,7 @@ func main() {
 	if e != nil {
 		fmt.Printf("File error: %v\n", e)
 	}
+
 	var config Config
 	json.Unmarshal(file, &config)
 	fmt.Printf("Commands: ")
@@ -54,6 +56,10 @@ func main() {
 			m_bot.AddCmd(commands.NewReminder())
 		}
 	}
-
+	go func() {
+		for {
+			fmt.Println(<-m_bot.Log)
+		}
+	}()
 	m_bot.Connect()
 }
