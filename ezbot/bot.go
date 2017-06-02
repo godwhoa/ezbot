@@ -11,16 +11,14 @@ import (
 )
 
 type Bot struct {
-	conn       *irc.Conn
-	nconn      net.Conn
-	tls_config *tls.Config
-	timeout    time.Duration
-	addr       string
-	nick       string
-	channel    string
-	commands   []ICommand
-	schan      chan string
-	Log        chan string
+	conn     *irc.Conn
+	timeout  time.Duration
+	addr     string
+	nick     string
+	channel  string
+	commands []ICommand
+	send     chan string
+	Log      chan string
 }
 
 func New(nick string, channel string, addr string) *Bot {
@@ -28,24 +26,33 @@ func New(nick string, channel string, addr string) *Bot {
 	bot.nick = nick
 	bot.channel = channel
 	bot.addr = addr
-	bot.schan = make(chan string)
-	bot.Log = make(chan string)
 	bot.timeout = 300 * time.Second
-	bot.tls_config = &tls.Config{InsecureSkipVerify: true}
+	bot.send = make(chan string)
+	bot.Log = make(chan string)
 	return bot
 }
 
-// Make a conn. and spin-off read/write loops.
-func (b *Bot) Connect() {
+func tls_or_tcp(addr string) (net.Conn, error) {
 	var err error
-	b.nconn, err = tls.Dial("tcp", b.addr, b.tls_config)
+	var conn net.Conn
+	conn, err = tls.Dial("tcp", addr, &tls.Config{InsecureSkipVerify: true})
 	if err != nil {
-		b.nconn, err = net.Dial("tcp", b.addr)
+		conn, err = net.Dial("tcp", addr)
 		if err != nil {
-			fmt.Println("Failed to connect.")
+			return conn, err
 		}
 	}
-	b.conn = irc.NewConn(b.nconn)
+	return conn, nil
+}
+
+// Make a conn. and spin-off read/write loops.
+func (b *Bot) Connect() error {
+	netconn, err := tls_or_tcp(b.addr)
+	if err != nil {
+		b.Log <- fmt.Sprintf("[bot] connection err: %s", err.Error())
+		return err
+	}
+	b.conn = irc.NewConn(netconn)
 
 	b.Log <- fmt.Sprintf("[bot] connecting addr: %s chan: %s", b.addr, b.channel)
 
@@ -56,17 +63,17 @@ func (b *Bot) Connect() {
 	// Send loop
 	go func() {
 		for {
-			b.Send(<-b.schan)
+			b.Send(<-b.send)
 		}
 	}()
 
 	// Read loop
 	for {
-		b.nconn.SetDeadline(time.Now().Add(b.timeout))
+		netconn.SetDeadline(time.Now().Add(b.timeout))
 		message, err := b.conn.Decode()
 		if err != nil {
 			b.Log <- fmt.Sprintf("[bot] decode err: %s", err.Error())
-			break
+			return err
 		}
 
 		switch message.Command {
@@ -86,7 +93,7 @@ func (b *Bot) Connect() {
 		}
 	}
 
-	b.conn.Close()
+	return b.conn.Close()
 }
 
 // Sets nick and joins channel
@@ -104,7 +111,7 @@ func (b *Bot) JoinCmds(taken bool) {
 // Adds commands to be executed
 func (b *Bot) AddCmd(commands ...ICommand) {
 	for _, command := range commands {
-		command.Init(b.schan, b.Log)
+		command.Init(b.send, b.Log)
 		b.commands = append(b.commands, command)
 	}
 }

@@ -61,5 +61,5 @@ func main() {
 			fmt.Println(<-m_bot.Log)
 		}
 	}()
-	m_bot.Connect()
+	fmt.Println(m_bot.Connect())
 }
