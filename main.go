@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	"github.com/godwhoa/ezbot/commands"
 	"github.com/godwhoa/ezbot/ezbot"
@@ -61,5 +62,8 @@ func main() {
 			fmt.Println(<-m_bot.Log)
 		}
 	}()
+	time.AfterFunc(time.Minute*2, func() {
+		m_bot.Disconnect()
+	})
 	fmt.Println(m_bot.Connect())
 }

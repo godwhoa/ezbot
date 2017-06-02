@@ -11,14 +11,15 @@ import (
 )
 
 type Bot struct {
-	conn     *irc.Conn
-	timeout  time.Duration
-	addr     string
-	nick     string
-	channel  string
-	commands []ICommand
-	send     chan string
-	Log      chan string
+	conn       *irc.Conn
+	timeout    time.Duration
+	addr       string
+	nick       string
+	channel    string
+	commands   []ICommand
+	send       chan string
+	disconnect bool
+	Log        chan string
 }
 
 func New(nick string, channel string, addr string) *Bot {
@@ -29,6 +30,7 @@ func New(nick string, channel string, addr string) *Bot {
 	bot.timeout = 300 * time.Second
 	bot.send = make(chan string)
 	bot.Log = make(chan string)
+	bot.disconnect = false
 	return bot
 }
 
@@ -62,13 +64,13 @@ func (b *Bot) Connect() error {
 	}
 	// Send loop
 	go func() {
-		for {
+		for !b.disconnect {
 			b.Send(<-b.send)
 		}
 	}()
 
 	// Read loop
-	for {
+	for !b.disconnect {
 		netconn.SetDeadline(time.Now().Add(b.timeout))
 		message, err := b.conn.Decode()
 		if err != nil {
@@ -94,6 +96,10 @@ func (b *Bot) Connect() error {
 	}
 
 	return b.conn.Close()
+}
+
+func (b *Bot) Disconnect() {
+	b.disconnect = true
 }
 
 // Sets nick and joins channel
