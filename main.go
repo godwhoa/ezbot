@@ -4,66 +4,76 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"time"
+	"log"
 
 	"github.com/godwhoa/ezbot/commands"
 	"github.com/godwhoa/ezbot/ezbot"
 )
 
-var (
-	m_nick    = "ezbot"
-	m_channel = "#ezirc"
-	m_addr    = "chat.freenode.net:6667"
-)
-
-type Config struct {
+type configFile struct {
 	Nick     string   `json:"nick"`
 	Channel  string   `json:"channel"`
 	Addr     string   `json:"addr"`
 	Commands []string `json:"commands"`
 }
 
-func main() {
-
-	file, e := ioutil.ReadFile("./config.json")
-	if e != nil {
-		fmt.Printf("File error: %v\n", e)
-	}
-
-	var config Config
-	json.Unmarshal(file, &config)
+func (c *configFile) print() {
+	fmt.Printf("Nick: %s Addr: %s Channel: %s", c.Nick, c.Addr, c.Channel)
 	fmt.Printf("Commands: ")
-	for _, cmd := range config.Commands {
-		fmt.Printf("%s ", cmd)
+	for _, command := range c.Commands {
+		fmt.Printf("%s ", command)
 	}
 	fmt.Printf("\n")
+}
 
-	m_bot := ezbot.New(config.Nick, config.Channel, config.Addr)
-	for _, c := range config.Commands {
+func (c *configFile) toBotConfig() ezbot.Config {
+	return ezbot.Config{Nick: c.Nick, Channel: c.Channel, Addr: c.Addr}
+}
+
+func loadConfigFile(path string) (configFile, error) {
+	var config configFile
+
+	file, err := ioutil.ReadFile(path)
+	if err != nil {
+		return config, err
+	}
+
+	if err := json.Unmarshal(file, &config); err != nil {
+		return config, err
+	}
+
+	return config, nil
+}
+
+func main() {
+	configfile, err := loadConfigFile("./config.json")
+	if err != nil {
+		log.Fatalf("Failed to load configfile")
+	}
+
+	bot := ezbot.New()
+	for _, c := range configfile.Commands {
 		switch c {
 		case "echo":
-			m_bot.AddCmd(commands.NewEcho(config.Nick))
+			bot.AddCmd(commands.NewEcho(configfile.Nick))
 		case "seen":
-			m_bot.AddCmd(commands.NewSeen())
+			bot.AddCmd(commands.NewSeen())
 		case "tell":
-			m_bot.AddCmd(commands.NewTell())
+			bot.AddCmd(commands.NewTell())
 		case "timein":
-			m_bot.AddCmd(commands.NewTimeIn())
+			bot.AddCmd(commands.NewTimeIn())
 		case "title":
-			m_bot.AddCmd(commands.NewTitle())
+			bot.AddCmd(commands.NewTitle())
 		case "git":
-			m_bot.AddCmd(commands.NewGit())
+			bot.AddCmd(commands.NewGit())
 		case "reminder":
-			m_bot.AddCmd(commands.NewReminder())
+			bot.AddCmd(commands.NewReminder())
 		}
 	}
 	go func() {
 		for {
-			fmt.Println(<-m_bot.Log)
+			fmt.Println(<-bot.Log)
 		}
 	}()
-	time.AfterFunc(time.Minute*2, func() {
-		m_bot.Disconnect()
-	})
-	fmt.Println(m_bot.Connect())
+	log.Fatal(bot.Connect(configfile.toBotConfig()))
 }
