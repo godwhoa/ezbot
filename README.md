@@ -45,13 +45,13 @@ func (e *Echo) Execute(user string, msg string, args []string) {
 
 func main(){
 	// create a bot
-	m_bot := ezbot.New("ezbot","#ezbot","chat.freenode.net:6697")
+	bot := ezbot.New()
 	// Init command
 	echo := NewEcho("ezbot")
 	// Add commands
-	m_bot.Add(echo)
+	bot.Add(echo)
 	// Connects and spins-off a read/write loop
-	m_bot.Connect()
+	bot.Connect(ezbot.Config{Nick:"ezbot",Addr:"chat.freenode.net:6667",Channel:"##ezirc"})
 }
 ```
 
@@ -62,5 +62,5 @@ func main(){
  + ~~Handle TLS servers~~
  + ~~Config file~~
  + ~~Handle nick collision~~
- + Better naming of types, variables etc.
+ + ~~Better naming of types, variables etc.~~
  + Add tests
